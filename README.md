@@ -1,3 +1,4 @@
 # how are you? 
 im fine thank you.
-hello!
+hello!<bar>
+im ok.
