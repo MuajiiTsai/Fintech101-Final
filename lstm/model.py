@@ -13,7 +13,7 @@ class finmodel(nn.Module):
     def __init__(self, 
                  input_size:int, 
                  hidden_size:int,
-                 num_classes:int=1, 
+                 num_classes:int=2, 
                  num_layers:int=2, 
                  dropout_rate:float=.1):
         super(finmodel, self).__init__()
@@ -31,7 +31,8 @@ class finmodel(nn.Module):
         self.ln2 = nn.Sequential(
             nn.Linear(hidden_size, num_classes, bias=True),
             nn.BatchNorm1d(num_features=num_classes),   #??
-            nn.Softmax(dim=0))
+            nn.Softmax(dim=1))
+            # nn.Tanh())
         
         # self.hidden = self.init_hidden()
     
