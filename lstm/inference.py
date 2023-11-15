@@ -12,6 +12,8 @@ from tqdm import tqdm
 EMBED_DIM = 3
 HIDDEN_SIZE = 50
 EMBEDDING_DATA = "./embedding.csv"
+OUT = "./output_csv/answer.csv"
+
 HIDDEN = "./output_ckpt/hidden.pt"
 checkpoint_path = './output_ckpt/best.ckpt'
 #-------------------------------------------
@@ -51,9 +53,14 @@ test_loader = DataLoader(test_dataset, batch_size=1024)
 
 hidden = torch.load(HIDDEN)
 
+df = pd.DataFrame(columns=['txkey', 'pred'])
 for fin_info, _, txkey in tqdm(test_loader):
     with torch.no_grad():
         fin_info = fin_info.cuda()
         label, hidden = model(fin_info, (hidden[0].detach(), hidden[1].detach()))
         # print("label:", label.shape)
-        print(label)
+        label = torch.argmax(label, dim=1)
+        temp_df = pd.DataFrame({'txkey': txkey, 'pred': label.detach().cpu()})
+        df = pd.concat([df, temp_df])
+df = df.set_index('txkey')
+df.to_csv(OUT)
