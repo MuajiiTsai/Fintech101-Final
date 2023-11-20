@@ -23,11 +23,11 @@ def fill(df: pd.DataFrame):
 DATA1 = "training.csv"
 DATA2 = "public_processed.csv"
 
-d1 = pd.read_csv(DATA1, engine="pyarrow").drop(columns=['acqic', 'chid', 'conam', 'csmam', \
-    'mchno', 'scity', 'stscd'])
+d1 = pd.read_csv(DATA1, engine="pyarrow").drop(columns=['acqic', 'chid', 'contp', 'insfg', 'iterm', 'bnsfg', 'flbmk'\
+    , 'mchno', 'stscd'])
 print("dataset:", DATA1)
-d2 = pd.read_csv(DATA2, engine='pyarrow').drop(columns=['acqic', 'chid', 'conam', 'csmam', \
-    'mchno', 'scity', 'stscd'])
+d2 = pd.read_csv(DATA2, engine='pyarrow').drop(columns=['acqic', 'chid', 'contp', 'insfg', 'iterm', 'bnsfg', 'flbmk'\
+    , 'mchno', 'stscd'])
 print("dataset:", DATA2)
 
 d1_fill = fill(d1.drop(columns=['cano', 'txkey']))
@@ -37,14 +37,36 @@ d2 = pd.concat([d2['txkey'], d2['cano'], d2_fill], axis=1)
 
 datalist = pd.concat([d1, d2], ignore_index=True).fillna(0.5)   # label public dataset: -10
 
-# raise KeyboardInterrupt
-
-# datalist = datalist
 datalist = datalist.sort_values(by=['locdt', 'loctm'], ascending=True)   # sorting by date and time
-datalist = datalist.sort_values(by=['cano'], ascending=False, kind='stable')
+datalist = datalist.sort_values(by=['cano'], ascending=True, kind='stable')
 datalist['cid'] = datalist['cano'].rank(method='dense', ascending=True).astype(int)
 
 datalist = datalist.drop(columns=['cano'])
+
+# merge locdt and loctm to 'time'
+# Merge 'locdt' and 'loctm' into a new 'time' column
+datalist['time'] = pd.to_datetime(datalist['loctm'].astype(str).str.zfill(6), format='%H%M%S', errors='coerce')
+
+# Calculate the time difference and store in 'tiff' column
+datalist['tdif'] = (datalist.groupby('cid')['time'].diff().dt.total_seconds() + datalist.groupby('cid')['locdt'].diff() * 86400).fillna(-1)
+
+# Drop the unnecessary columns
+datalist = datalist.drop(['locdt', 'loctm', 'time'], axis=1)
+
+# print(datalist[['cid', 'tdif', 'time', 'locdt', 'loctm']])
+
+# last label
+
+"""
+# time difference (obsolete)
+# Sort the DataFrame by CustomerID and Time
+datalist = datalist.sort_values(['cid', 'time'])
+# Calculate the time difference for the same customer ID
+datalist['tdif'] = datalist.groupby('cid')['time'].diff().fillna(-1)
+"""
+
+# city dif
+datalist['ctdif'] = (datalist.groupby('cid')['stocn'].diff().fillna(0).ne(0)).astype(int)
 
 # public output
 public_mask = datalist['label'] == 0.5
@@ -52,13 +74,13 @@ public_dataset = datalist[public_mask]
 public_dataset = public_dataset.drop(columns=['label']) # drop the label
 public_dataset = public_dataset.set_index('txkey')
 public_dataset = public_dataset.sort_values(by=['cid'], ascending=True)
-public_dataset.to_csv("public_clean.csv")
+public_dataset.to_csv("public_ctandtime.csv")
 
 # train output
 train_mask = datalist['label'] != 0.5
 train_dataset = datalist[train_mask]
 train_dataset = train_dataset.set_index('txkey')
 train_dataset = train_dataset.sort_values(by=['cid'], ascending=True)
-train_dataset.to_csv("train_clean.csv")
+train_dataset.to_csv("train_ctandtime.csv")
 
 # train_mask = datalist[(datalist['label'] != -1) & (df['label'] != -2)] if private dataset is added
