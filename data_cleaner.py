@@ -41,13 +41,11 @@ d3_fill = fill(d3.drop(columns=['cano', 'txkey']))
 
 d1 = pd.concat([d1['txkey'], d1['cano'], d1_fill], axis=1)
 d2 = pd.concat([d2['txkey'], d2['cano'], d2_fill], axis=1)
-d3 = pd.concat([d3['txkey'], d3['cano'], d2_fill], axis=1)
+d3 = pd.concat([d3['txkey'], d3['cano'], d3_fill], axis=1)
 
 d1_index = d1.set_index('txkey').index
 d2_index = d2.set_index('txkey').index
 d3_index = d3.set_index('txkey').index
-
-print(len(d1_index), len(d2_index), len(d3_index))
 
 datalist = pd.concat([d1, d2, d3], ignore_index=True).fillna(0.5)   # label private dataset: -10
 
@@ -59,13 +57,13 @@ datalist = datalist.drop(columns=['cano'])
 
 # merge locdt and loctm to 'time'
 # Merge 'locdt' and 'loctm' into a new 'time' column
-datalist['time'] = pd.to_datetime(datalist['loctm'].astype(str).str.zfill(6), format='%H%M%S', errors='coerce')
+datalist['time'] = pd.to_datetime(datalist['loctm'].astype(int).astype(str).str.zfill(6), format='%H%M%S', errors='coerce')
 
 # Calculate the time difference and store in 'tiff' column
-datalist['tdif'] = (datalist.groupby('cid')['time'].diff().dt.total_seconds() + datalist.groupby('cid')['locdt'].diff() * 86400).fillna(-1)
+datalist['tdif'] = (datalist.groupby('cid')['time'].diff().dt.total_seconds() + datalist.groupby('cid')['locdt'].diff() * 86400).fillna(-1) 
 
 # Drop the unnecessary columns
-datalist = datalist.drop(['locdt', 'loctm', 'time'], axis=1)
+# datalist = datalist.drop(['locdt', 'loctm', 'time'], axis=1)
 # print(datalist[['cid', 'tdif', 'time', 'locdt', 'loctm']])
 
 """
@@ -88,16 +86,16 @@ datalist = datalist.set_index('txkey')
 private_dataset = datalist[datalist.index.isin(d3_index)]
 private_dataset = private_dataset.drop(columns=['label'])
 print(private_dataset[:100])
-print(private_dataset.shape)
-private_dataset.to_csv("private_ver1.csv")
+# print(private_dataset.shape)
+# private_dataset.to_csv("private_ver1.csv")
 
 # public output
 public_dataset = datalist[datalist.index.isin(d2_index)]
-print(public_dataset.shape)
-public_dataset.to_csv("public_ver1.csv")
+# print(public_dataset.shape)
+# public_dataset.to_csv("public_ver1.csv")
 
 # train output
 train_dataset = datalist[datalist.index.isin(d1_index)]
-print(train_dataset.shape)
-train_dataset.to_csv("train_ver1.csv")
+# print(train_dataset.shape)
+# train_dataset.to_csv("train_ver1.csv")
 
