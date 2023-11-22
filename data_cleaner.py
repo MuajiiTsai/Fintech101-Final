@@ -20,8 +20,10 @@ def fill(df: pd.DataFrame):
             df[key] = df[key].fillna(df[key].mode().values[0])  # filling missing data with the mode
     return df
 
+# data
 DATA1 = "training.csv"
-DATA2 = "public_processed.csv"
+DATA2 = "public.csv"
+DATA3 = "private_1_processed.csv"
 
 d1 = pd.read_csv(DATA1, engine="pyarrow").drop(columns=['acqic', 'chid', 'contp', 'insfg', 'iterm', 'bnsfg', 'flbmk'\
     , 'mchno', 'stscd'])
@@ -29,15 +31,27 @@ print("dataset:", DATA1)
 d2 = pd.read_csv(DATA2, engine='pyarrow').drop(columns=['acqic', 'chid', 'contp', 'insfg', 'iterm', 'bnsfg', 'flbmk'\
     , 'mchno', 'stscd'])
 print("dataset:", DATA2)
+d3 = pd.read_csv(DATA3, engine='pyarrow').drop(columns=['acqic', 'chid', 'contp', 'insfg', 'iterm', 'bnsfg', 'flbmk'\
+    , 'mchno', 'stscd'])
+print("dataset:", DATA3)
 
 d1_fill = fill(d1.drop(columns=['cano', 'txkey']))
 d2_fill = fill(d2.drop(columns=['cano', 'txkey']))
+d3_fill = fill(d3.drop(columns=['cano', 'txkey']))
+
 d1 = pd.concat([d1['txkey'], d1['cano'], d1_fill], axis=1)
 d2 = pd.concat([d2['txkey'], d2['cano'], d2_fill], axis=1)
+d3 = pd.concat([d3['txkey'], d3['cano'], d2_fill], axis=1)
 
-datalist = pd.concat([d1, d2], ignore_index=True).fillna(0.5)   # label public dataset: -10
+d1_index = d1.set_index('txkey').index
+d2_index = d2.set_index('txkey').index
+d3_index = d3.set_index('txkey').index
 
-datalist = datalist.sort_values(by=['locdt', 'loctm'], ascending=True)   # sorting by date and time
+print(len(d1_index), len(d2_index), len(d3_index))
+
+datalist = pd.concat([d1, d2, d3], ignore_index=True).fillna(0.5)   # label private dataset: -10
+
+datalist = datalist.sort_values(by=['locdt', 'loctm'], ascending=True, kind='stable')   # sorting by date and time
 datalist = datalist.sort_values(by=['cano'], ascending=True, kind='stable')
 datalist['cid'] = datalist['cano'].rank(method='dense', ascending=True).astype(int)
 
@@ -52,10 +66,7 @@ datalist['tdif'] = (datalist.groupby('cid')['time'].diff().dt.total_seconds() + 
 
 # Drop the unnecessary columns
 datalist = datalist.drop(['locdt', 'loctm', 'time'], axis=1)
-
 # print(datalist[['cid', 'tdif', 'time', 'locdt', 'loctm']])
-
-# last label
 
 """
 # time difference (obsolete)
@@ -66,21 +77,27 @@ datalist['tdif'] = datalist.groupby('cid')['time'].diff().fillna(-1)
 """
 
 # city dif
-datalist['ctdif'] = (datalist.groupby('cid')['stocn'].diff().fillna(0).ne(0)).astype(int)
+datalist['ctdif'] = (datalist.groupby('cid')['stocn'].diff().fillna(0).ne(0)).astype(float)
+
+# csmam dif
+datalist['amdif'] = abs(datalist.groupby('cid')['flam1'].diff().fillna(0)).astype(float)
+
+datalist = datalist.set_index('txkey')
+
+# private output
+private_dataset = datalist[datalist.index.isin(d3_index)]
+private_dataset = private_dataset.drop(columns=['label'])
+print(private_dataset[:100])
+print(private_dataset.shape)
+private_dataset.to_csv("private_ver1.csv")
 
 # public output
-public_mask = datalist['label'] == 0.5
-public_dataset = datalist[public_mask]
-public_dataset = public_dataset.drop(columns=['label']) # drop the label
-public_dataset = public_dataset.set_index('txkey')
-public_dataset = public_dataset.sort_values(by=['cid'], ascending=True)
-public_dataset.to_csv("public_ctandtime.csv")
+public_dataset = datalist[datalist.index.isin(d2_index)]
+print(public_dataset.shape)
+public_dataset.to_csv("public_ver1.csv")
 
 # train output
-train_mask = datalist['label'] != 0.5
-train_dataset = datalist[train_mask]
-train_dataset = train_dataset.set_index('txkey')
-train_dataset = train_dataset.sort_values(by=['cid'], ascending=True)
-train_dataset.to_csv("train_ctandtime.csv")
+train_dataset = datalist[datalist.index.isin(d1_index)]
+print(train_dataset.shape)
+train_dataset.to_csv("train_ver1.csv")
 
-# train_mask = datalist[(datalist['label'] != -1) & (df['label'] != -2)] if private dataset is added
