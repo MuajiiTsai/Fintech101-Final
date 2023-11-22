@@ -35,6 +35,8 @@ d3 = pd.read_csv(DATA3, engine='pyarrow').drop(columns=['acqic', 'chid', 'contp'
     , 'mchno', 'stscd'])
 print("dataset:", DATA3)
 
+print(d2.shape, d3.shape)
+
 d1_fill = fill(d1.drop(columns=['cano', 'txkey']))
 d2_fill = fill(d2.drop(columns=['cano', 'txkey']))
 d3_fill = fill(d3.drop(columns=['cano', 'txkey']))
@@ -63,7 +65,7 @@ datalist['time'] = pd.to_datetime(datalist['loctm'].astype(int).astype(str).str.
 datalist['tdif'] = (datalist.groupby('cid')['time'].diff().dt.total_seconds() + datalist.groupby('cid')['locdt'].diff() * 86400).fillna(-1) 
 
 # Drop the unnecessary columns
-# datalist = datalist.drop(['locdt', 'loctm', 'time'], axis=1)
+datalist = datalist.drop(['locdt', 'loctm', 'time'], axis=1)
 # print(datalist[['cid', 'tdif', 'time', 'locdt', 'loctm']])
 
 """
@@ -82,20 +84,20 @@ datalist['amdif'] = abs(datalist.groupby('cid')['flam1'].diff().fillna(0)).astyp
 
 datalist = datalist.set_index('txkey')
 
-# private output
-private_dataset = datalist[datalist.index.isin(d3_index)]
-private_dataset = private_dataset.drop(columns=['label'])
-print(private_dataset[:100])
+
+
+# # private output
+# private_dataset = datalist[datalist.index.isin(d3_index)]
+# private_dataset = private_dataset.drop(columns=['label'])
+# # print(private_dataset[:100])
 # print(private_dataset.shape)
 # private_dataset.to_csv("private_ver1.csv")
-
-# public output
-public_dataset = datalist[datalist.index.isin(d2_index)]
+# # public output
+# public_dataset = datalist[datalist.index.isin(d2_index)]
 # print(public_dataset.shape)
 # public_dataset.to_csv("public_ver1.csv")
-
-# train output
-train_dataset = datalist[datalist.index.isin(d1_index)]
+# # train output
+# train_dataset = datalist[datalist.index.isin(d1_index)]
 # print(train_dataset.shape)
 # train_dataset.to_csv("train_ver1.csv")
 
