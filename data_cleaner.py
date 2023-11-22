@@ -76,6 +76,11 @@ datalist = datalist.sort_values(['cid', 'time'])
 datalist['tdif'] = datalist.groupby('cid')['time'].diff().fillna(-1)
 """
 
+# last city
+datalist['lcity'] = datalist.groupby('cid')['stocn'].shift(1).fillna(-1)
+# last label
+datalist['llabel'] = datalist.groupby('cid')['label'].shift(1).fillna(-1)
+
 # city dif
 datalist['ctdif'] = (datalist.groupby('cid')['stocn'].diff().fillna(0).ne(0)).astype(float)
 
@@ -86,18 +91,18 @@ datalist = datalist.set_index('txkey')
 
 
 
-# # private output
-# private_dataset = datalist[datalist.index.isin(d3_index)]
-# private_dataset = private_dataset.drop(columns=['label'])
-# # print(private_dataset[:100])
-# print(private_dataset.shape)
-# private_dataset.to_csv("private_ver1.csv")
-# # public output
-# public_dataset = datalist[datalist.index.isin(d2_index)]
-# print(public_dataset.shape)
-# public_dataset.to_csv("public_ver1.csv")
-# # train output
-# train_dataset = datalist[datalist.index.isin(d1_index)]
-# print(train_dataset.shape)
-# train_dataset.to_csv("train_ver1.csv")
+# private output
+private_dataset = datalist[datalist.index.isin(d3_index)]
+private_dataset = private_dataset.drop(columns=['label'])
+# print(private_dataset[:100])
+print(private_dataset.shape)
+private_dataset.to_csv("private_ver2.csv")
+# public output
+public_dataset = datalist[datalist.index.isin(d2_index)]
+print(public_dataset.shape)
+public_dataset.to_csv("public_ver2.csv")
+# train output
+train_dataset = datalist[datalist.index.isin(d1_index)]
+print(train_dataset.shape)
+train_dataset.to_csv("train_ver2.csv")
 

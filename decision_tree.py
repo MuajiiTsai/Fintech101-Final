@@ -15,7 +15,7 @@ import os
 TRAIN_DATA = "train_ver1.csv"
 PUBLIC_DATA = "public_ver1.csv"
 PRIVATE_DATA = "private_ver1.csv"
-OUT_PKL = "output_pkl/RF_onlygenfeature.pkl"
+OUT_PKL = "output_pkl/RF_allin.pkl"
 EMBEDDING_DATA = "embedding.csv"
 #--------------------------------
 """
@@ -45,9 +45,9 @@ train_arr, valid_arr = X_train.to_numpy(dtype=np.float32), X_valid.to_numpy(dtyp
 # test_arr = test.drop(columns=['label', 'txkey']).to_numpy(dtype=np.float32)
 """
 
-train_df = pd.read_csv(TRAIN_DATA, engine='pyarrow')[['txkey', 'label', 'stocn', 'flam1', 'cid', 'tdif']]
+train_df = pd.read_csv(TRAIN_DATA, engine='pyarrow')
 print("train:", TRAIN_DATA)
-valid_df = pd.read_csv(PUBLIC_DATA, engine='pyarrow')[['txkey', 'label', 'stocn', 'flam1', 'cid', 'tdif']]
+valid_df = pd.read_csv(PUBLIC_DATA, engine='pyarrow')
 print("valid:", PUBLIC_DATA)
 
 # test_df = pd.read_csv(TEST_DATA, engine='pyarrow')
