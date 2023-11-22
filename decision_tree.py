@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -12,9 +12,10 @@ import os
 
 #--------------------------------
 # TODO
-TRAIN_DATA = "train_ctandtime.csv"
-TEST_DATA = "public_ctandtime.csv"
-OUT_PKL = "output_pkl/RF_newtime.pkl"
+TRAIN_DATA = "train_ver1.csv"
+PUBLIC_DATA = "public_ver1.csv"
+PRIVATE_DATA = "private_ver1.csv"
+OUT_PKL = "output_pkl/RF_onlygenfeature.pkl"
 EMBEDDING_DATA = "embedding.csv"
 #--------------------------------
 """
@@ -44,8 +45,11 @@ train_arr, valid_arr = X_train.to_numpy(dtype=np.float32), X_valid.to_numpy(dtyp
 # test_arr = test.drop(columns=['label', 'txkey']).to_numpy(dtype=np.float32)
 """
 
-train_df = pd.read_csv(TRAIN_DATA, engine='pyarrow')
+train_df = pd.read_csv(TRAIN_DATA, engine='pyarrow')[['txkey', 'label', 'stocn', 'flam1', 'cid', 'tdif']]
 print("train:", TRAIN_DATA)
+valid_df = pd.read_csv(PUBLIC_DATA, engine='pyarrow')[['txkey', 'label', 'stocn', 'flam1', 'cid', 'tdif']]
+print("valid:", PUBLIC_DATA)
+
 # test_df = pd.read_csv(TEST_DATA, engine='pyarrow')
 # print("test: ", TEST_DATA)
 
@@ -60,8 +64,12 @@ train_df = train_df[~((train_df['label'] == 0) & (train_df['transaction_times'] 
 train_df = train_df.drop('transaction_times', axis=1)
 
 train_key = train_df['txkey'].to_frame()
+
 label = train_df['label'].to_numpy(dtype=np.float32)
 train = train_df.drop(columns=['label', 'txkey']).to_numpy(dtype=np.float32)
+
+valid_label = valid_df['label'].to_numpy(dtype=np.float32)
+valid = valid_df.drop(columns=['label', 'txkey']).to_numpy(dtype=np.float32)
 
 X_train, X_valid, y_train, y_valid = train_test_split(
     train, label, test_size=.33, stratify=label
@@ -70,18 +78,24 @@ X_train, X_valid, y_train, y_valid = train_test_split(
 # testing
 # test_key = test_df['txkey'].to_frame()
 # test = test_df.drop(columns=['txkey', 'cano', 'tid']).to_numpy(dtype=np.float32)
- 
+
+# normalization
+scalar = MinMaxScaler().fit(train)
+
 clf = RandomForestClassifier(n_estimators=100, max_depth=30, verbose=100, n_jobs=-1)
 # clf = MLPClassifier(random_state=1, max_iter=100, verbose=True)
 # clf = SVC(gamma=2, C=1, random_state=1, max_iter=250, verbose=True)
-clf = clf.fit(X_train, y_train)
+# clf = clf.fit(scalar.transform(X_train), y_train)
 
-pred = clf.predict(X_valid)
-print(f"\n--------------\n{f1_score(y_valid, pred)}")
+###### using all training data
+clf = clf.fit(scalar.transform(train), label)
+
+pred = clf.predict(scalar.transform(valid))
+print(f"\n--------------\n{f1_score(valid_label, pred)}")
 
 # Save the model to a file using pickle
-# with open(OUT_PKL, 'wb') as file:
-#     pickle.dump(clf, file)
+with open(OUT_PKL, 'wb') as file:
+    pickle.dump(clf, file)
 
 
 
