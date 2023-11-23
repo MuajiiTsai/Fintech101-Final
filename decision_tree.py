@@ -12,11 +12,11 @@ import os
 
 #--------------------------------
 # TODO
-TRAIN_DATA = "train_ver1.csv"
-PUBLIC_DATA = "public_ver1.csv"
-PRIVATE_DATA = "private_ver1.csv"
-OUT_PKL = "output_pkl/RF_allin.pkl"
-EMBEDDING_DATA = "embedding.csv"
+TRAIN_DATA = "train_ver3.csv"
+PUBLIC_DATA = "public_ver3.csv"
+PRIVATE_DATA = "private_ver3.csv"
+OUT_PKL = "output_pkl/RF_ver3.pkl"
+# EMBEDDING_DATA = "embedding.csv"
 #--------------------------------
 """
 ############
@@ -96,7 +96,6 @@ print(f"\n--------------\n{f1_score(valid_label, pred)}")
 # Save the model to a file using pickle
 with open(OUT_PKL, 'wb') as file:
     pickle.dump(clf, file)
-
 
 
 
