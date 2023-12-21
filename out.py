@@ -6,11 +6,11 @@ from sklearn.metrics import f1_score
 from sklearn.preprocessing import MinMaxScaler
 #-----------------
 # TODO
-TRAIN_DATA = "train_ver3.csv"
-PUBLIC_DATA = "public_ver3.csv"
-PRIVATE_DATA = "private_ver3.csv"
+TRAIN_DATA = "train_ver4.csv"
+PUBLIC_DATA = "public_ver4.csv"
+PRIVATE_DATA = "private_ver4.csv"
 MODEL_PATH = "output_pkl"
-MODEL_NAME = "RF_ver3.pkl"
+MODEL_NAME = "RF_ver4.pkl"
 OUT_PATH = "output_csv"
 OUT_NAME = f"{MODEL_NAME[:-4]}.csv"
 OUT_WHOLE = f"{MODEL_NAME[:-4]}_whole.csv"
@@ -73,12 +73,14 @@ with open(MODEL, 'rb') as file:
     clf = pickle.load(file)
 
 test_arr = test_df.drop(columns=['txkey']).to_numpy(dtype=np.float32)
-for i in range(100):
-    out = clf.predict(scalar.transform(test_arr)).astype(int)
-    print(sum(out))
-    test_df['label'] = out
-    test_df['llabel'] = test_df.groupby('cid')['label'].shift(1).fillna(-1)
-    test_arr = test_df.drop(columns=['txkey', 'label']).to_numpy(dtype=np.float32)
+
+out = clf.predict(scalar.transform(test_arr)).astype(int)
+# print(f1_score(valid_label, out[:600182]))
+# test_df['label'] = out
+# test_df['llabel'].loc[600182:] = test_df.loc[600182:].groupby('cid')['label'].shift(1).fillna(-1)
+# test_arr = test_df.drop(columns=['txkey', 'label']).to_numpy(dtype=np.float32)
+
+print(sum(out))
 
 # pred = clf.predict(scalar.transform(valid))
 # print(sum(pred))    # 1874
@@ -86,11 +88,12 @@ for i in range(100):
 
 out_df = pd.DataFrame(out, columns=['pred'])
 
-output = pd.concat([test_key.reset_index(), out_df.reset_index(drop=True)], axis=1)
+output = pd.concat([test_key.reset_index(drop=True), out_df.reset_index(drop=True)], axis=1)
 output = output.set_index('txkey')
+print(output[:10])
 output.to_csv(OUT)
 
-output_whole = pd.concat([test_df.reset_index(), out_df.reset_index(drop=True)], axis=1)
+output_whole = pd.concat([test_df.reset_index(drop=True), out_df.reset_index(drop=True)], axis=1)
 output_whole = output_whole.set_index('txkey')
 output_whole.to_csv(OUT_WHOLE)
 

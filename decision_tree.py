@@ -12,10 +12,10 @@ import os
 
 #--------------------------------
 # TODO
-TRAIN_DATA = "train_ver3.csv"
-PUBLIC_DATA = "public_ver3.csv"
-PRIVATE_DATA = "private_ver3.csv"
-OUT_PKL = "output_pkl/RF_ver3.pkl"
+TRAIN_DATA = "train_ver4.csv"
+PUBLIC_DATA = "public_ver4.csv"
+PRIVATE_DATA = "private_ver4.csv"
+OUT_PKL = "output_pkl/RF_ver4.pkl"
 # EMBEDDING_DATA = "embedding.csv"
 #--------------------------------
 """
