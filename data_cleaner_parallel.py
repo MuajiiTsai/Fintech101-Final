@@ -116,47 +116,49 @@ datalist['amdif'] = abs(datalist.groupby('cid')['flam1'].diff().fillna(0)).astyp
 
 datalist = datalist.set_index('txkey')
 
-#new_datalist=pd.DataFrame(columns=datalist.columns+'tdifCity')
+new_datalist=pd.DataFrame(columns=datalist.columns+'tdifCity')
 with ProcessPoolExecutor() as executor:
+    # Group by 'cid' column
     grouped_datalist = datalist.groupby('cid')
-    
 
-    # Use concurrent futures for parallel processing
-    results = list(executor.map(process_group, [group for name, group in grouped_datalist]))
+    #interate over each cid
+    for group_key in grouped_datalist.groups.keys():
+        print(group_key, "/", datalist['cid'].nunique())
+        group=grouped_datalist.get_group(group_key)
 
+        #list of 'tdifCity'
+        difCityTime=[] 
 
-# Concatenate the results
-datalist_with_tdifCity = pd.concat(results)
-# print(datalist_with_tdifCity.head(10)[['cid', 'tdif', 'ctdif', 'tdifCity']])
-# datalist_with_tdifCity.reset_index(inplace=True)
-
-
+        lastCity=(group['ctdif'] != 0.0).tolist()
+        tdif=group['tdif'].tolist()
+        last=0
+        for i in range(len(lastCity)):
+            if i ==0:
+                if lastCity[i]==0: difCityTime.append(0)
+                else :difCityTime.append(tdif[i])
+                last=lastCity[i]
+            else:
+                #print(last,lastCity[i],tdif[i],difCityTime[-1])
+                if last==0 and lastCity[i]==0: 
+                    pre=difCityTime[-1]
+                    difCityTime.append(tdif[i]+pre)
+                else: 
+                    difCityTime.append(tdif[i])
+                last=lastCity[i]
+        group['tdifCity']=difCityTime
+        new_datalist = pd.concat([new_datalist, group])
+datalist=new_datalist
 # private output
-private_mask = datalist_with_tdifCity['id'] == -1
-private_dataset = datalist_with_tdifCity[private_mask]
+private_dataset = datalist[datalist.index.isin(d3_index)]
 private_dataset = private_dataset.drop(columns=['label'])
-
-# print(private_dataset.shape)
-# print(private_dataset.head(10)[['cid', 'tdif', 'ctdif', 'tdifCity']])
+# print(private_dataset[:100])
+print(private_dataset.shape)
 private_dataset.to_csv("private_ver2.csv")
-
 # public output
-public_mask = datalist_with_tdifCity['id'] == 0
-public_dataset = datalist_with_tdifCity[public_mask]
-
-# print(public_dataset.shape)
-# print(public_dataset.head(10)[['cid', 'tdif', 'ctdif', 'tdifCity']])
+public_dataset = datalist[datalist.index.isin(d2_index)]
+print(public_dataset.shape)
 public_dataset.to_csv("public_ver2.csv")
-
 # train output
-train_mask = datalist_with_tdifCity['id'] == 1
-train_dataset = datalist_with_tdifCity[train_mask]
-
-# print(train_dataset.shape)
-# print(train_dataset.head(10)[['cid', 'tdif', 'ctdif', 'tdifCity']])
+train_dataset = datalist[datalist.index.isin(d1_index)]
+print(train_dataset.shape)
 train_dataset.to_csv("train_ver2.csv")
-
-
-
-
-
